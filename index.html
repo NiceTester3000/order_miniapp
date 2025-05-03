@@ -118,7 +118,7 @@
           formData.append('image', file);
 
           try {
-            const res = await fetch('http://localhost:5000/upload-photo', {
+            const res = await fetch('https://order-miniapp.onrender.com/upload-photo', {
               method: 'POST',
               body: formData
             });
@@ -162,7 +162,7 @@
           return;
         }
 
-        const res = await fetch('http://localhost:5000/submit', {
+        const res = await fetch('https://order-miniapp.onrender.com/submit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username, chat_id: chatId, items })
