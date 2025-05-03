@@ -1,197 +1,130 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Заказ товаров из Китая</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #1a1a1a;
-      color: #fff;
-      margin: 0;
-    }
-    h2 {
-      color: #ff3333;
-      text-align: center;
-    }
-    input, button {
-      margin: 8px 0;
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ff3333;
-      border-radius: 5px;
-      background: #333;
-      color: #fff;
-      box-sizing: border-box;
-    }
-    input[readonly] {
-      background: #555;
-    }
-    input[type="file"] {
-      padding: 3px;
-    }
-    button {
-      background: #ff3333;
-      border: none;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background: #cc0000;
-    }
-    .delete-btn {
-      background: #555;
-    }
-    .delete-btn:hover {
-      background: #777;
-    }
-    hr {
-      border-color: #ff3333;
-      margin: 15px 0;
-    }
-    .loader {
-      display: none;
-      text-align: center;
-      color: #ff3333;
-      margin-top: 10px;
-    }
-    .item {
-      margin-bottom: 10px;
-      padding: 10px;
-      border: 1px solid #ff3333;
-      border-radius: 5px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order MiniApp</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .item { margin-bottom: 20px; }
+        button { padding: 10px 20px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        input, select { margin: 5px 0; padding: 5px; width: 100%; max-width: 300px; }
+        label { display: block; margin-top: 10px; }
+    </style>
 </head>
 <body>
-  <h2>Заказ товаров из Китая</h2>
-  <input id="username" placeholder="Ваш ник (авто)" readonly><br><br>
+    <h1>Форма заказа</h1>
+    <label for="username">Название бланка (можно изменить):</label>
+    <input type="text" id="username" name="username" title="Это название вашего бланка. Вы можете изменить его.">
 
-  <div id="items"></div>
-  <button onclick="addItem()">➕ Добавить товар</button><br><br>
-  <button onclick="submitForm()">📥 Сформировать бланк</button>
-  <div class="loader" id="loader">Отправка...</div>
+    <form id="orderForm" onsubmit="submitForm(event)">
+        <div id="items">
+            <div class="item">
+                <h3>Товар 1</h3>
+                <label>Наименование:</label>
+                <input type="text" name="name_1" required>
+                <label>Ссылка на товар или Wechat поставщика:</label>
+                <input type="text" id="link_1" name="link_1">
+                <input type="file" onchange="uploadPhoto(this, 'link_1')">
+                <label>Размер:</label>
+                <input type="text" name="size_1">
+                <label>Количество:</label>
+                <input type="number" name="quantity_1" required>
+                <label>Цена:</label>
+                <input type="number" step="0.01" name="price_1" required>
+            </div>
+        </div>
+        <button type="button" onclick="addItem()">Добавить товар</button>
+        <br><br>
+        <label>QR поставщика (для выкупов wechat):</label>
+        <input type="text" id="contact_photo" name="contact_photo">
+        <input type="file" onchange="uploadPhoto(this, 'contact_photo')">
+        <br><br>
+        <button type="submit">Сформировать бланк</button>
+    </form>
 
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
-
-    const usernameInput = document.getElementById("username");
-    const username = tg.initDataUnsafe?.user?.username || tg.initDataUnsafe?.user?.first_name || 'anonymous';
-    usernameInput.value = username;
-    const chatId = tg.initDataUnsafe?.user?.id || null;
-
-    function addItem() {
-      const div = document.createElement('div');
-      div.className = 'item';
-      const id = Date.now();
-
-      div.innerHTML = `
-        <input placeholder="Наименование товара (обувь, шорты...)" class="name">
-        <input placeholder="Ссылка на товар или контакт" class="link">
-        <input placeholder="Ссылка на фото контакта" class="contactPhoto" readonly>
-        <input type="file" accept="image/*" class="contactPhotoFile" data-id="${id}-contact">
-        <input placeholder="Ссылка на фото товара" class="photo" readonly>
-        <input type="file" accept="image/*" class="photoFile" data-id="${id}-photo">
-        <input placeholder="Размер" class="size">
-        <input placeholder="Количество" class="qty" type="number" min="1">
-        <input placeholder="Цена за единицу (юани)" class="price" type="number" min="0" step="0.01">
-        <button class="delete-btn" onclick="this.parentElement.remove()">❌ Удалить</button>
-        <hr>
-      `;
-      document.getElementById('items').appendChild(div);
-
-      const fileInputs = [
-        { input: div.querySelector('.photoFile'), output: div.querySelector('.photo'), type: 'photo' },
-        { input: div.querySelector('.contactPhotoFile'), output: div.querySelector('.contactPhoto'), type: 'contact' }
-      ];
-
-      fileInputs.forEach(({ input, output, type }) => {
-        input.addEventListener('change', async (e) => {
-          const file = e.target.files[0];
-          if (!file) return;
-
-          const formData = new FormData();
-          formData.append('image', file);
-
-          try {
-            const res = await fetch('https://order-miniapp.onrender.com/upload-photo', {
-              method: 'POST',
-              body: formData
-            });
-
-            const data = await res.json();
-            if (data.url) {
-              output.value = data.url;
-            } else {
-              alert(`Ошибка при загрузке ${type === 'photo' ? 'фото товара' : 'фото контакта'}: ${data.error}`);
+    <script>
+        window.onload = function() {
+            const usernameField = document.getElementById('username');
+            if (window.Telegram && window.Telegram.WebApp) {
+                const user = window.Telegram.WebApp.initDataUnsafe.user;
+                if (user) {
+                    usernameField.value = user.username || user.first_name || 'User';
+                }
             }
-          } catch (error) {
-            alert(`Ошибка при загрузке ${type === 'photo' ? 'фото товара' : 'фото контакта'}: ${error.message}`);
-          }
-        });
-      });
-    }
+        };
 
-    async function submitForm() {
-      try {
-        document.getElementById('loader').style.display = 'block';
-        const itemDivs = document.querySelectorAll('#items > div');
-        const items = Array.from(itemDivs).map(div => ({
-          name: div.querySelector('.name').value,
-          link: div.querySelector('.link').value,
-          contactPhoto: div.querySelector('.contactPhoto').value,
-          photo: div.querySelector('.photo').value,
-          size: div.querySelector('.size').value,
-          qty: div.querySelector('.qty').value,
-          price: div.querySelector('.price').value
-        }));
+        let itemCount = 1;
 
-        for (let item of items) {
-          if (!item.name || !item.link || !item.size || !item.qty || !item.price) {
-            alert('Пожалуйста, заполните все обязательные поля для каждого товара (кроме фото)!');
-            return;
-          }
+        function addItem() {
+            itemCount++;
+            const itemsDiv = document.getElementById('items');
+            const newItem = document.createElement('div');
+            newItem.className = 'item';
+            newItem.innerHTML = `
+                <h3>Товар ${itemCount}</h3>
+                <label>Наименование:</label>
+                <input type="text" name="name_${itemCount}" required>
+                <label>Ссылка на товар или Wechat поставщика:</label>
+                <input type="text" id="link_${itemCount}" name="link_${itemCount}">
+                <input type="file" onchange="uploadPhoto(this, 'link_${itemCount}')">
+                <label>Размер:</label>
+                <input type="text" name="size_${itemCount}">
+                <label>Количество:</label>
+                <input type="number" name="quantity_${itemCount}" required>
+                <label>Цена:</label>
+                <input type="number" step="0.01" name="price_${itemCount}" required>
+            `;
+            itemsDiv.appendChild(newItem);
         }
 
-        if (!chatId) {
-          alert('Ошибка: Не удалось определить ваш Telegram ID');
-          return;
+        async function uploadPhoto(input, linkFieldId) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                const res = await fetch('https://order-miniapp.onrender.com/upload-photo', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                console.log('Ответ от сервера:', data);
+                if (data.url) {
+                    document.getElementById(linkFieldId).value = data.url;
+                } else {
+                    alert('Произошла ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            } catch (error) {
+                alert('Произошла ошибка: ' + error.message);
+            }
         }
 
-        const res = await fetch('https://order-miniapp.onrender.com/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username, chat_id: chatId, items })
-        });
+        async function submitForm(event) {
+            event.preventDefault();
+            const form = document.getElementById('orderForm');
+            const formData = new FormData(form);
+            formData.append('username', document.getElementById('username').value);
 
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.error || 'Ошибка при отправке данных на сервер');
+            try {
+                const res = await fetch('https://order-miniapp.onrender.com/submit', {
+                    method: 'POST',
+                    body: formData
+                });
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = document.getElementById('username').value + '.xlsx';
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                alert('Ошибка при отправке формы: ' + error.message);
+            }
         }
-
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${username}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-
-        alert('Бланк успешно отправлен в Telegram!');
-      } catch (error) {
-        alert('Произошла ошибка: ' + error.message);
-      } finally {
-        document.getElementById('loader').style.display = 'none';
-      }
-    }
-
-    // Добавляем один товар по умолчанию
-    addItem();
-  </script>
+    </script>
 </body>
 </html>
