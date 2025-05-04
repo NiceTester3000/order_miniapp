@@ -58,8 +58,8 @@
 </head>
 <body>
     <h1>Форма заказа</h1>
-    <label for="username">Название бланка (можно изменить):</label>
-    <input type="text" id="username" name="username" title="Это название вашего бланка. Вы можете изменить его.">
+    <label for="username">Название бланка (Регион(EU, RU, ...) Ник или имя в ТГ. Пример EU, @user):</label>
+    <input type="text" id="username" name="username" placeholder="EU, @user" title="Введите регион и ваш ник или имя в Telegram (например, EU, @user)">
 
     <form id="orderForm" onsubmit="submitForm(event)">
         <div id="items">
@@ -88,21 +88,6 @@
     </form>
 
     <script>
-        window.onload = function() {
-            const usernameField = document.getElementById('username');
-            if (window.Telegram && window.Telegram.WebApp) {
-                const user = window.Telegram.WebApp.initDataUnsafe.user;
-                console.log('User data:', user);
-                if (user) {
-                    usernameField.value = user.username || user.first_name || 'User';
-                } else {
-                    usernameField.value = 'User';
-                }
-            } else {
-                usernameField.value = 'User';
-            }
-        };
-
         let itemCount = 1;
 
         function addItem() {
