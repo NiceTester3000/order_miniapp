@@ -71,7 +71,7 @@
 </head>
 <body>
     <h1>Форма заказа</h1>
-    <label for="username">Название бланка (регион, @ник в тг, дата) Пример: EU, @user, 06.06.26):</label>
+    <label for="username">Название бланка (регион, @ник в тг, дата) Пример: EU, @user, 06.06.26:</label>
     <input type="text" id="username" name="username" placeholder="EU, @username, 06.06.2026" title="Введите регион и ваш ник или имя в Telegram (например, EU, @username)">
 
     <form id="orderForm" onsubmit="submitForm(event)">
@@ -84,7 +84,7 @@
                 <label>Ссылка на товар или Wechat поставщика:</label>
                 <input type="text" id="link_1" name="link_1">
                 <input type="file" onchange="uploadPhoto(this, 'link_1')">
-                <label>QR поставщика (для выкупов wechat):</label>
+                <label>Фото товара:</label>
                 <input type="text" id="qr_1" name="qr_1">
                 <input type="file" onchange="uploadPhoto(this, 'qr_1')">
                 <label>Размер:</label>
@@ -116,7 +116,7 @@
                 <label>Ссылка на товар или Wechat поставщика:</label>
                 <input type="text" id="link_${itemCount}" name="link_${itemCount}">
                 <input type="file" onchange="uploadPhoto(this, 'link_${itemCount}')">
-                <label>QR поставщика (для выкупов wechat):</label>
+                 <label>Фото товара:</label>
                 <input type="text" id="qr_${itemCount}" name="qr_${itemCount}">
                 <input type="file" onchange="uploadPhoto(this, 'qr_${itemCount}')">
                 <label>Размер:</label>
