@@ -198,13 +198,13 @@
     // Проверка Telegram WebApp
     let chat_id = '';
     if (window.Telegram && window.Telegram.WebApp) {
-        console.log("Telegram WebApp доступен");
+        alert("Telegram WebApp доступен");
         const initData = window.Telegram.WebApp.initDataUnsafe;
-        console.log("initDataUnsafe:", initData); // Отладка: что возвращает initDataUnsafe
+        alert("initDataUnsafe: " + JSON.stringify(initData)); // Отладка: что возвращает initDataUnsafe
         chat_id = initData?.chat?.id || initData?.user?.id || '';
-        console.log("chat_id:", chat_id); // Отладка: какой chat_id получен
+        alert("chat_id: " + chat_id); // Отладка: какой chat_id получен
     } else {
-        console.log("Telegram WebApp НЕ доступен");
+        alert("Telegram WebApp НЕ доступен");
     }
 
     if (!chat_id) {
