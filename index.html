@@ -195,11 +195,27 @@
             const formData = new FormData(form);
             formData.append('username', document.getElementById('username').value);
 
+            // Добавляем chat_id из Telegram WebApp
+            let chat_id = '';
+            if (window.Telegram && window.Telegram.WebApp) {
+                const initData = window.Telegram.WebApp.initDataUnsafe;
+                chat_id = initData?.chat?.id || initData?.user?.id || '';
+            }
+            if (!chat_id) {
+                alert('Не удалось определить chat_id. Пожалуйста, откройте приложение через Telegram.');
+                return;
+            }
+            formData.append('chat_id', chat_id);
+
             try {
                 const res = await fetch('https://order-miniapp.onrender.com/submit', {
                     method: 'POST',
                     body: formData
                 });
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || 'Неизвестная ошибка сервера');
+                }
                 const blob = await res.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
