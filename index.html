@@ -198,6 +198,18 @@
     const formData = new FormData(form);
     formData.append('username', document.getElementById('username').value);
 
+    // Проверка Telegram WebApp на старте
+    window.onload = function() {
+    if (window.Telegram && window.Telegram.WebApp) {
+        alert("Telegram WebApp доступен при загрузке страницы");
+        window.Telegram.WebApp.ready();
+        const initData = window.Telegram.WebApp.initDataUnsafe;
+        alert("initDataUnsafe при загрузке: " + JSON.stringify(initData));
+    } else {
+        alert("Telegram WebApp НЕ доступен при загрузке страницы");
+    }
+};
+
     // Ждём 1 секунду, чтобы Telegram WebApp успел инициализироваться
     await new Promise(resolve => setTimeout(resolve, 1000));
 
