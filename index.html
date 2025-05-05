@@ -97,6 +97,9 @@
         </div>
         <button type="button" onclick="addItem()">Добавить товар</button>
         <br><br>
+        <label for="chat_id">Введите ваш chat_id (для теста):</label>
+<input type="text" id="chat_id" name="chat_id" placeholder="Например, 123456789">
+<br><br>
         <button type="submit">Сформировать бланк</button>
     </form>
 
@@ -189,7 +192,7 @@
             }
         }
 
-        async function submitForm(event) {
+       async function submitForm(event) {
     event.preventDefault();
     const form = document.getElementById('orderForm');
     const formData = new FormData(form);
@@ -203,15 +206,18 @@
     if (window.Telegram && window.Telegram.WebApp) {
         alert("Telegram WebApp доступен");
         const initData = window.Telegram.WebApp.initDataUnsafe;
-        alert("initDataUnsafe: " + JSON.stringify(initData)); // Отладка: что возвращает initDataUnsafe
+        alert("initDataUnsafe: " + JSON.stringify(initData));
         chat_id = initData?.chat?.id || initData?.user?.id || '';
-        alert("chat_id: " + chat_id); // Отладка: какой chat_id получен
+        alert("chat_id: " + chat_id);
     } else {
         alert("Telegram WebApp НЕ доступен");
+        // Используем chat_id из формы, если Telegram WebApp недоступен
+        chat_id = document.getElementById('chat_id').value || '';
+        alert("Используем введённый chat_id: " + chat_id);
     }
 
     if (!chat_id) {
-        alert('Не удалось определить chat_id. Пожалуйста, откройте приложение через Telegram.');
+        alert('Не указан chat_id. Введите его вручную или откройте приложение через Telegram.');
         return;
     }
     formData.append('chat_id', chat_id);
