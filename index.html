@@ -190,43 +190,49 @@
         }
 
         async function submitForm(event) {
-            event.preventDefault();
-            const form = document.getElementById('orderForm');
-            const formData = new FormData(form);
-            formData.append('username', document.getElementById('username').value);
+    event.preventDefault();
+    const form = document.getElementById('orderForm');
+    const formData = new FormData(form);
+    formData.append('username', document.getElementById('username').value);
 
-            // Добавляем chat_id из Telegram WebApp
-            let chat_id = '';
-            if (window.Telegram && window.Telegram.WebApp) {
-                const initData = window.Telegram.WebApp.initDataUnsafe;
-                chat_id = initData?.chat?.id || initData?.user?.id || '';
-            }
-            if (!chat_id) {
-                alert('Не удалось определить chat_id. Пожалуйста, откройте приложение через Telegram.');
-                return;
-            }
-            formData.append('chat_id', chat_id);
+    // Проверка Telegram WebApp
+    let chat_id = '';
+    if (window.Telegram && window.Telegram.WebApp) {
+        console.log("Telegram WebApp доступен");
+        const initData = window.Telegram.WebApp.initDataUnsafe;
+        console.log("initDataUnsafe:", initData); // Отладка: что возвращает initDataUnsafe
+        chat_id = initData?.chat?.id || initData?.user?.id || '';
+        console.log("chat_id:", chat_id); // Отладка: какой chat_id получен
+    } else {
+        console.log("Telegram WebApp НЕ доступен");
+    }
 
-            try {
-                const res = await fetch('https://order-miniapp.onrender.com/submit', {
-                    method: 'POST',
-                    body: formData
-                });
-                if (!res.ok) {
-                    const errorData = await res.json();
-                    throw new Error(errorData.error || 'Неизвестная ошибка сервера');
-                }
-                const blob = await res.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = document.getElementById('username').value + '.xlsx';
-                a.click();
-                window.URL.revokeObjectURL(url);
-            } catch (error) {
-                alert('Ошибка при отправке формы: ' + error.message);
-            }
+    if (!chat_id) {
+        alert('Не удалось определить chat_id. Пожалуйста, откройте приложение через Telegram.');
+        return;
+    }
+    formData.append('chat_id', chat_id);
+
+    try {
+        const res = await fetch('https://order-miniapp.onrender.com/submit', {
+            method: 'POST',
+            body: formData
+        });
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.error || 'Неизвестная ошибка сервера');
         }
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = document.getElementById('username').value + '.xlsx';
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        alert('Ошибка при отправке формы: ' + error.message);
+    }
+}
     </script>
 </body>
 </html>
