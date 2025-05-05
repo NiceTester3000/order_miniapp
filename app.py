@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "https://peppy-cat-9abb7e.netlify.app"}})
 load_dotenv()
 
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
