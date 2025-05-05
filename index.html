@@ -192,7 +192,7 @@
             }
         }
 
-       async function submitForm(event) {
+      async function submitForm(event) {
     event.preventDefault();
     const form = document.getElementById('orderForm');
     const formData = new FormData(form);
@@ -223,14 +223,17 @@
     formData.append('chat_id', chat_id);
 
     try {
+        alert("Отправляем запрос на сервер...");
         const res = await fetch('https://order-miniapp.onrender.com/submit', {
             method: 'POST',
             body: formData
         });
+        alert("Запрос отправлен, проверяем ответ...");
         if (!res.ok) {
             const errorData = await res.json();
             throw new Error(errorData.error || 'Неизвестная ошибка сервера');
         }
+        alert("Ответ получен, скачиваем файл...");
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
