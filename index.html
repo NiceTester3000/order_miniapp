@@ -22,6 +22,7 @@
             background-color: #fff;
             border: 1px solid #ddd;
             border-radius: 5px;
+            position: relative;
         }
         button {
             padding: 10px 20px;
@@ -34,6 +35,18 @@
         }
         button:hover {
             background-color: #45a049;
+        }
+        .delete-btn {
+            background-color: #ff4444;
+            padding: 5px 10px;
+            font-size: 14px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: none;
+        }
+        .delete-btn:hover {
+            background-color: #cc0000;
         }
         input, select {
             margin: 5px 0;
@@ -58,18 +71,22 @@
 </head>
 <body>
     <h1>Форма заказа</h1>
-    <label for="username">Название бланка: регион ник дата. Пример: EU  @username 06.06.26:</label>
-    <input type="text" id="username" name="username" placeholder="EU  @username дата" title="Введите регион и ваш ник или имя в Telegram (например, EU, @username)">
+    <label for="username">Название бланка (Регион(EU, RU, ...) Ник или имя в ТГ. Пример EU, @user):</label>
+    <input type="text" id="username" name="username" placeholder="EU, @user" title="Введите регион и ваш ник или имя в Telegram (например, EU, @user)">
 
     <form id="orderForm" onsubmit="submitForm(event)">
         <div id="items">
             <div class="item">
                 <h3>Товар 1</h3>
+                <button type="button" class="delete-btn" onclick="removeItem(this)">Удалить</button>
                 <label>Наименование:</label>
                 <input type="text" name="name_1" required>
                 <label>Ссылка на товар или Wechat поставщика:</label>
                 <input type="text" id="link_1" name="link_1">
                 <input type="file" onchange="uploadPhoto(this, 'link_1')">
+                <label>QR поставщика (для выкупов wechat):</label>
+                <input type="text" id="qr_1" name="qr_1">
+                <input type="file" onchange="uploadPhoto(this, 'qr_1')">
                 <label>Размер:</label>
                 <input type="text" name="size_1">
                 <label>Количество:</label>
@@ -79,10 +96,6 @@
             </div>
         </div>
         <button type="button" onclick="addItem()">Добавить товар</button>
-        <br><br>
-        <label>QR поставщика (для выкупов wechat):</label>
-        <input type="text" id="contact_photo" name="contact_photo">
-        <input type="file" onchange="uploadPhoto(this, 'contact_photo')">
         <br><br>
         <button type="submit">Сформировать бланк</button>
     </form>
@@ -97,11 +110,15 @@
             newItem.className = 'item';
             newItem.innerHTML = `
                 <h3>Товар ${itemCount}</h3>
+                <button type="button" class="delete-btn" onclick="removeItem(this)">Удалить</button>
                 <label>Наименование:</label>
                 <input type="text" name="name_${itemCount}" required>
                 <label>Ссылка на товар или Wechat поставщика:</label>
                 <input type="text" id="link_${itemCount}" name="link_${itemCount}">
                 <input type="file" onchange="uploadPhoto(this, 'link_${itemCount}')">
+                <label>QR поставщика (для выкупов wechat):</label>
+                <input type="text" id="qr_${itemCount}" name="qr_${itemCount}">
+                <input type="file" onchange="uploadPhoto(this, 'qr_${itemCount}')">
                 <label>Размер:</label>
                 <input type="text" name="size_${itemCount}">
                 <label>Количество:</label>
@@ -110,6 +127,42 @@
                 <input type="number" step="0.01" name="price_${itemCount}" required>
             `;
             itemsDiv.appendChild(newItem);
+            updateDeleteButtons();
+        }
+
+        function removeItem(button) {
+            const item = button.parentElement;
+            item.remove();
+            itemCount--;
+            updateItemNumbers();
+            updateDeleteButtons();
+        }
+
+        function updateItemNumbers() {
+            const items = document.querySelectorAll('.item');
+            items.forEach((item, index) => {
+                const itemNumber = index + 1;
+                item.querySelector('h3').textContent = `Товар ${itemNumber}`;
+                item.querySelector('input[name^="name_"]').name = `name_${itemNumber}`;
+                item.querySelector('input[id^="link_"]').id = `link_${itemNumber}`;
+                item.querySelector('input[name^="link_"]').name = `link_${itemNumber}`;
+                item.querySelector('input[id^="qr_"]').id = `qr_${itemNumber}`;
+                item.querySelector('input[name^="qr_"]').name = `qr_${itemNumber}`;
+                item.querySelector('input[name^="size_"]').name = `size_${itemNumber}`;
+                item.querySelector('input[name^="quantity_"]').name = `quantity_${itemNumber}`;
+                item.querySelector('input[name^="price_"]').name = `price_${itemNumber}`;
+            });
+            itemCount = items.length;
+        }
+
+        function updateDeleteButtons() {
+            const items = document.querySelectorAll('.item');
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+            if (items.length > 1) {
+                deleteButtons.forEach(button => button.style.display = 'block');
+            } else {
+                deleteButtons.forEach(button => button.style.display = 'none');
+            }
         }
 
         async function uploadPhoto(input, linkFieldId) {
