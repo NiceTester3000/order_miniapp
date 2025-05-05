@@ -49,13 +49,23 @@ def upload_photo():
 @app.route('/submit', methods=['POST'])
 def submit():
     try:
-        data = request.json
-        if not data or 'items' not in data:
-           return jsonify({'error': 'Отсутствуют данные о товарах'}), 400
-
-        items = data.get('items', [])
-        username = data.get('username', 'user')
-        chat_id = data.get('chat_id')
+        # Получаем данные из FormData
+        username = request.form.get('username', 'user')
+        chat_id = request.form.get('chat_id')
+        items = []
+        i = 1
+        while f'name_{i}' in request.form:
+            item = {
+                'name': request.form.get(f'name_{i}', ''),
+                'link': request.form.get(f'link_{i}', ''),
+                'photo': request.form.get(f'qr_{i}', ''),  # Синхронизируем qr_X с photo
+                'contactPhoto': '',  # Поле удалено из формы, оставляем пустым
+                'size': request.form.get(f'size_{i}', ''),
+                'qty': request.form.get(f'quantity_{i}', '0'),
+                'price': request.form.get(f'price_{i}', '0.00')
+            }
+            items.append(item)
+            i += 1
 
         if not items:
             return jsonify({'error': 'Список товаров пуст'}), 400
