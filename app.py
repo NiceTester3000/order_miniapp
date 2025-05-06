@@ -25,8 +25,19 @@ def send_to_telegram(file, filename, chat_id):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendDocument"
     files = {'document': (filename, file, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}
     data = {'chat_id': chat_id}
-    response = requests.post(url, files=files, data=data)
-    return response.json()
+    try:
+        response = requests.post(url, files=files, data=data)
+        response_data = response.json()
+        if response_data.get('ok'):
+            # Отправляем уведомление пользователю
+            text_url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+            requests.post(text_url, data={'chat_id': chat_id, 'text': f'Ваш заказ ({filename}) успешно получен!'})
+        else:
+            print(f"Ошибка Telegram API: {response_data.get('description')}")
+        return response_data
+    except Exception as e:
+        print(f"Исключение при отправке в Telegram: {str(e)}")
+        return {'ok': False, 'description': str(e)}
 
 @app.route('/upload-photo', methods=['POST'])
 def upload_photo():
@@ -49,7 +60,7 @@ def upload_photo():
 @app.route('/submit', methods=['POST'])
 def submit():
     try:
-        # Получаем данные из FormData
+        print("Полученные данные формы:", request.form)
         username = request.form.get('username', 'user')
         chat_id = request.form.get('chat_id')
         items = []
@@ -58,8 +69,8 @@ def submit():
             item = {
                 'name': request.form.get(f'name_{i}', ''),
                 'link': request.form.get(f'link_{i}', ''),
-                'photo': request.form.get(f'qr_{i}', ''),  # Синхронизируем qr_X с photo
-                'contactPhoto': '',  # Поле удалено из формы, оставляем пустым
+                'photo': request.form.get(f'qr_{i}', ''),
+                'contactPhoto': '',
                 'size': request.form.get(f'size_{i}', ''),
                 'qty': request.form.get(f'quantity_{i}', '0'),
                 'price': request.form.get(f'price_{i}', '0.00')
@@ -123,6 +134,7 @@ def submit():
             download_name=filename
         )
     except Exception as e:
+        print(f"Ошибка в /submit: {str(e)}")
         return jsonify({'error': f'Ошибка сервера: {str(e)}'}), 500
 
 @app.route('/')

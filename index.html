@@ -67,6 +67,9 @@
             max-width: 600px;
             margin: 0 auto;
         }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -90,21 +93,30 @@
                 <label>Размер:</label>
                 <input type="text" name="size_1">
                 <label>Количество:</label>
-                <input type="number" name="quantity_1" required>
+                <input type="number" name="quantity_1" min="1" required>
                 <label>Цена:</label>
-                <input type="number" step="0.01" name="price_1" required>
+                <input type="number" step="0.01" name="price_1" min="0.01" required>
             </div>
         </div>
         <button type="button" onclick="addItem()">Добавить товар</button>
         <br><br>
-        <label for="chat_id">Введите ваш chat_id (для теста):</label>
-<input type="text" id="chat_id" name="chat_id" placeholder="Например, 123456789">
-<br><br>
+        <label for="chat_id" id="chat_id_label">Введите ваш chat_id (для теста):</label>
+        <input type="text" id="chat_id" name="chat_id" placeholder="Например, 123456789">
+        <br><br>
         <button type="submit">Сформировать бланк</button>
     </form>
 
     <script>
         let itemCount = 1;
+
+        // Скрываем поле chat_id, если открыт через Telegram WebApp
+        window.onload = function() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                document.getElementById('chat_id').classList.add('hidden');
+                document.getElementById('chat_id_label').classList.add('hidden');
+                window.Telegram.WebApp.ready();
+            }
+        };
 
         function addItem() {
             itemCount++;
@@ -125,9 +137,9 @@
                 <label>Размер:</label>
                 <input type="text" name="size_${itemCount}">
                 <label>Количество:</label>
-                <input type="number" name="quantity_${itemCount}" required>
+                <input type="number" name="quantity_${itemCount}" min="1" required>
                 <label>Цена:</label>
-                <input type="number" step="0.01" name="price_${itemCount}" required>
+                <input type="number" step="0.01" name="price_${itemCount}" min="0.01" required>
             `;
             itemsDiv.appendChild(newItem);
             updateDeleteButtons();
@@ -181,82 +193,57 @@
                     body: formData
                 });
                 const data = await res.json();
-                console.log('Ответ от сервера:', data);
                 if (data.url) {
                     document.getElementById(linkFieldId).value = data.url;
                 } else {
-                    alert('Произошла ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                    alert('Ошибка загрузки фото: ' + (data.error || 'Неизвестная ошибка'));
                 }
             } catch (error) {
-                alert('Произошла ошибка: ' + error.message);
+                alert('Ошибка загрузки фото: ' + error.message);
             }
         }
 
-      async function submitForm(event) {
-    event.preventDefault();
-    const form = document.getElementById('orderForm');
-    const formData = new FormData(form);
-    formData.append('username', document.getElementById('username').value);
+        async function submitForm(event) {
+            event.preventDefault();
+            const form = document.getElementById('orderForm');
+            const formData = new FormData(form);
+            formData.append('username', document.getElementById('username').value);
 
-    // Проверка Telegram WebApp на старте
-    window.onload = function() {
-    if (window.Telegram && window.Telegram.WebApp) {
-        alert("Telegram WebApp доступен при загрузке страницы");
-        window.Telegram.WebApp.ready();
-        const initData = window.Telegram.WebApp.initDataUnsafe;
-        alert("initDataUnsafe при загрузке: " + JSON.stringify(initData));
-    } else {
-        alert("Telegram WebApp НЕ доступен при загрузке страницы");
-    }
-};
+            let chat_id = '';
+            if (window.Telegram && window.Telegram.WebApp) {
+                const initData = window.Telegram.WebApp.initDataUnsafe;
+                chat_id = initData?.user?.id || initData?.chat?.id || '';
+            } else {
+                chat_id = document.getElementById('chat_id').value;
+            }
 
-    // Ждём 1 секунду, чтобы Telegram WebApp успел инициализироваться
-    await new Promise(resolve => setTimeout(resolve, 1000));
+            if (!chat_id) {
+                alert('Пожалуйста, укажите chat_id или откройте приложение через Telegram.');
+                return;
+            }
+            formData.append('chat_id', chat_id);
 
-    // Проверка Telegram WebApp
-    let chat_id = '';
-    if (window.Telegram && window.Telegram.WebApp) {
-        alert("Telegram WebApp доступен");
-        const initData = window.Telegram.WebApp.initDataUnsafe;
-        alert("initDataUnsafe: " + JSON.stringify(initData));
-        chat_id = initData?.chat?.id || initData?.user?.id || '';
-        alert("chat_id: " + chat_id);
-    } else {
-        alert("Telegram WebApp НЕ доступен");
-        // Используем chat_id из формы, если Telegram WebApp недоступен
-        chat_id = document.getElementById('chat_id').value || '';
-        alert("Используем введённый chat_id: " + chat_id);
-    }
-
-    if (!chat_id) {
-        alert('Не указан chat_id. Введите его вручную или откройте приложение через Telegram.');
-        return;
-    }
-    formData.append('chat_id', chat_id);
-
-    try {
-        alert("Отправляем запрос на сервер...");
-        const res = await fetch('https://order-miniapp.onrender.com/submit', {
-            method: 'POST',
-            body: formData
-        });
-        alert("Запрос отправлен, проверяем ответ...");
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.error || 'Неизвестная ошибка сервера');
+            try {
+                const res = await fetch('https://order-miniapp.onrender.com/submit', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || 'Ошибка сервера');
+                }
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = document.getElementById('username').value + '.xlsx';
+                a.click();
+                window.URL.revokeObjectURL(url);
+                alert('Заказ успешно отправлен! Проверьте Telegram.');
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            }
         }
-        alert("Ответ получен, скачиваем файл...");
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = document.getElementById('username').value + '.xlsx';
-        a.click();
-        window.URL.revokeObjectURL(url);
-    } catch (error) {
-        alert('Ошибка при отправке формы: ' + error.message);
-    }
-}
     </script>
 </body>
 </html>
